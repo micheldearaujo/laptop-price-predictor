@@ -1,19 +1,23 @@
 import sys
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from pyspark.sql import SparkSession
 
 sys.path.insert(0,'.')
 
-from src.config import *
-
-prices_df = pd.read_csv("./data/raw/laptop_price.csv", sep=',', encoding='latin1')
-
 def convert_to_gb(string):
-    """Converts Hard Drive string memory to float."""
+    """
+    Converts Hard Drive string memory to float.
+    """
     number = float(string[:-2])
 
     if "TB" in string:
-        number = number*1024
+        number = number * 1024
     
     return number
+
 
 def build_features(raw_dataframe: pd.DataFrame):
 
@@ -99,14 +103,21 @@ def remove_weak_features(clean_dataframe: pd.DataFrame):
     return model_dataframe
 
 
-# Execute the function
-processed_df = build_features(prices_df)
+def feature_engineering_orchestration(save_to_table: bool = True):
 
-# save the clean DF
-processed_df.to_csv("./data/processed/clean_prices.csv", index=False)
+    #prices_df = pd.read_csv("./data/raw/laptop_price.csv", sep=',', encoding='latin1')
+    prices_df = spark.sql("select * from lp_raw_dataset").toPandas()
 
-# Execute the function
-model_df = remove_weak_features(processed_df)
+    # Execute the function
+    processed_df = build_features(prices_df)
 
-# save the model DF
-model_df.to_csv("./data/processed/model_df.csv", index=False)
+    # save the clean DF
+    spark.createDataFrame(processed_df).write.mode("ovetwrite").saveAsTable("lp_interim_clean")
+    #processed_df.to_csv("./data/processed/clean_prices.csv", index=False)
+
+    # Execute the function
+    model_df = remove_weak_features(processed_df)
+
+    # save the model DF
+    spark.createDataFrame(model_df).write.mode("ovetwrite").saveAsTable("lp_processed_modeling")
+    model_df.to_csv("./data/processed/model_df.csv", index=False)
