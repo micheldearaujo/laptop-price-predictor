@@ -15,8 +15,6 @@ from pyspark.sql import SparkSession
 
 sys.path.insert(0,'.')
 
-from src.config import columns_to_dummy
-
 spark = SparkSession.builder.getOrCreate()
 
 def convert_to_gigabytes(string):
@@ -89,31 +87,6 @@ def clean_memory_columns(raw_prices_pd: pd.DataFrame) -> pd.DataFrame:
     return raw_prices_pd
 
 
-def dummization_cat_columns(raw_prices_pd: pd.DataFrame, columns_to_dummy: list) -> pd.DataFrame:
-    """
-    Perform one-hot encoding for categorical columns in the DataFrame.
-
-    This function performs one-hot encoding for specified categorical columns in the DataFrame.
-
-    Parameters:
-        raw_prices_pd (pd.DataFrame): The input DataFrame containing raw laptop price data.
-        columns_to_dummy (list): A list of column names to perform one-hot encoding.
-
-    Returns:
-        pd.DataFrame: The DataFrame with categorical columns one-hot encoded.
-    """
-    raw_prices_pd = raw_prices_pd.join(pd.get_dummies(raw_prices_pd["Company"], prefix="company", dtype="int"))
-    raw_prices_pd = raw_prices_pd.join(pd.get_dummies(raw_prices_pd["TypeName"], prefix="typeName", dtype="int"))
-    raw_prices_pd = raw_prices_pd.join(pd.get_dummies(raw_prices_pd["CPU_BRAND"], prefix="CPU_BRAND", dtype="int"))
-    raw_prices_pd = raw_prices_pd.join(pd.get_dummies(raw_prices_pd["GPU_BRAND"], prefix="GPU_BRAND", dtype="int"))
-    raw_prices_pd = raw_prices_pd.join(pd.get_dummies(raw_prices_pd["OpSys"], prefix="OpSys", dtype="int"))
-    raw_prices_pd = raw_prices_pd.join(pd.get_dummies(raw_prices_pd["Memory_Type"], prefix="Memory_Type", dtype="int"))
-
-    raw_prices_pd = raw_prices_pd.drop(columns=columns_to_dummy)
-
-    return raw_prices_pd
-
-
 def drop_residual_columns(raw_prices_pd: pd.DataFrame) -> pd.DataFrame:
     """
     Drop residual columns from the DataFrame.
@@ -130,7 +103,7 @@ def drop_residual_columns(raw_prices_pd: pd.DataFrame) -> pd.DataFrame:
 
     return clean_prices
 
-def preprocessing_orchestration(raw_prices_pd: pd.DataFrame, save_to_table: bool = True, one_hot=True) -> pd.DataFrame:
+def preprocessing_orchestration(save_to_table: bool = True) -> pd.DataFrame:
     """
     Perform preprocessing orchestration for laptop price data.
 
@@ -149,24 +122,22 @@ def preprocessing_orchestration(raw_prices_pd: pd.DataFrame, save_to_table: bool
 
     raw_prices_pd = spark.sql("select * from lp_raw_dataset").toPandas()
 
-    companies_to_agg = ["Razer", "Mediacom", "Microsoft", "Xiaomi", "Vero", "Chuwi", "Google", 'Fujitsu', 'LG','Huawei']
-    raw_prices_pd["Company"] = raw_prices_pd["Company"].apply(lambda x: "Other" if x in companies_to_agg else x)
-    
     raw_prices_pd = clean_screen_resolution_column(raw_prices_pd)
     raw_prices_pd = clean_cpu_columns(raw_prices_pd)
     raw_prices_pd = clean_memory_columns(raw_prices_pd)
     raw_prices_pd["Weight"] = raw_prices_pd["Weight"].apply(lambda x: x[:-2]).astype("float")
     raw_prices_pd["GPU_BRAND"] = raw_prices_pd["Gpu"].str.split(" ").apply(lambda x: x[0])
-    if one_hot:
-        raw_prices_pd = dummization_cat_columns(raw_prices_pd, columns_to_dummy)
     clean_prices_pd = drop_residual_columns(raw_prices_pd)
 
     for column in clean_prices_pd.columns:
         clean_prices_pd = clean_prices_pd.rename(columns={column: column.replace(' ', '_')})
 
+    clean_prices_pys = spark.createDataFrame(clean_prices_pd)
+
     if save_to_table:
         
-        spark.createDataFrame(clean_prices_pd).write.mode("overwrite").saveAsTable("lp_interim_clean_prices")
+        #clean_prices_pys.write.mode("overwrite").option("overwriteSchema", "true").saveAsTable("lp_interim_clean_prices")
+        clean_prices_pys.createOrReplaceTempView("lp_interim_clean_prices")
 
     return clean_prices_pd
 

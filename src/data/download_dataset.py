@@ -30,10 +30,12 @@ def data_extraction_orchestration(save_to_table: bool = True) -> pd.DataFrame:
     """
 
     prices_df = pd.read_csv("https://raw.githubusercontent.com/micheldearaujo/datasets/main/laptop_price/laptop_price.csv", sep=',', encoding='latin1')
+    prices_df = spark.createDataFrame(prices_df)
 
     if save_to_table:
         
-        spark.createDataFrame(prices_df).write.mode("overwrite").saveAsTable("lp_raw_dataset")
+        #prices_df.write.mode("overwrite").saveAsTable("lp_raw_dataset")
+        prices_df.createOrReplaceTempView("lp_raw_dataset")
 
     return prices_df
 

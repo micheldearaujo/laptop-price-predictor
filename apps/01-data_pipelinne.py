@@ -12,12 +12,8 @@ from src.features.make_features import feature_engineering_orchestration
 # COMMAND ----------
 
 raw_prices_pd = data_extraction_orchestration()
-clean_prices_pd = preprocessing_orchestration(raw_prices_pd)
-
-
-# COMMAND ----------
-
-clean_prices_pd
+clean_prices_pd = preprocessing_orchestration()
+model_df = feature_engineering_orchestration(one_hot=False)
 
 # COMMAND ----------
 
