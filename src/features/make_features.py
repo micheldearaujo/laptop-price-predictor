@@ -125,7 +125,7 @@ def feature_engineering_orchestration(save_to_table: bool = True, one_hot: bool 
     Returns:
         pd.DataFrame: The processed DataFrame containing features for modeling.
     """
-    clean_prices_pd = spark.sql("select * from lp_interim_clean_prices").toPandas()
+    clean_prices_pd = spark.sql("select * from global_temp.lp_interim_clean_prices").toPandas()
 
     clean_prices_pd = aggregate_small_companies(clean_prices_pd, companies_to_agg)
 
@@ -138,7 +138,10 @@ def feature_engineering_orchestration(save_to_table: bool = True, one_hot: bool 
     for column in clean_prices_pd.columns:
         clean_prices_pd = clean_prices_pd.rename(columns={column: column.replace(" ", "_")})
 
+    inference_data = clean_prices_pd.tail(10)
+    clean_prices_pd = clean_prices_pd.head(clean_prices_pd.shape[0] - 10)
     clean_prices_pys = spark.createDataFrame(clean_prices_pd)
+    inference_data_pys = spark.createDataFrame(inference_data)
 
     if save_to_table:
         if one_hot:
@@ -147,6 +150,7 @@ def feature_engineering_orchestration(save_to_table: bool = True, one_hot: bool 
             typer = ""
 
         #spark.createDataFrame(clean_prices_pd).write.mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"lp_processed_modeling{typer}")
-        clean_prices_pys.createOrReplaceTempView(f"lp_processed_modeling{typer}")
+        clean_prices_pys.createOrReplaceGlobalTempView(f"lp_processed_modeling{typer}")
+        inference_data_pys.createOrReplaceGlobalTempView(f"lp_processed_modeling{typer}_inference")
 
     return clean_prices_pd

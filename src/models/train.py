@@ -252,7 +252,7 @@ def all_models_train(scope: str, cross=False, tuning=False) -> None:
         dict: A dictionary containing trained machine learning models for consumer occasion, channel, and subchannels.
     """
 
-    prices_df = spark.sql(f"select * from lp_processed_modeling{scope}").toPandas()
+    prices_df = spark.sql(f"select * from global_temp.lp_processed_modeling{scope}").toPandas()
     string_columns = prices_df.select_dtypes(include='object').columns
 
     for column in string_columns:

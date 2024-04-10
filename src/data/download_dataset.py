@@ -35,7 +35,7 @@ def data_extraction_orchestration(save_to_table: bool = True) -> pd.DataFrame:
     if save_to_table:
         
         #prices_df.write.mode("overwrite").saveAsTable("lp_raw_dataset")
-        prices_df.createOrReplaceTempView("lp_raw_dataset")
+        prices_df.createOrReplaceGlobalTempView("lp_raw_dataset")
 
     return prices_df
 

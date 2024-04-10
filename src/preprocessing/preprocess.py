@@ -120,7 +120,7 @@ def preprocessing_orchestration(save_to_table: bool = True) -> pd.DataFrame:
         pd.DataFrame: The preprocessed DataFrame containing laptop price data.
     """
 
-    raw_prices_pd = spark.sql("select * from lp_raw_dataset").toPandas()
+    raw_prices_pd = spark.sql("select * from global_temp.lp_raw_dataset").toPandas()
 
     raw_prices_pd = clean_screen_resolution_column(raw_prices_pd)
     raw_prices_pd = clean_cpu_columns(raw_prices_pd)
@@ -137,7 +137,7 @@ def preprocessing_orchestration(save_to_table: bool = True) -> pd.DataFrame:
     if save_to_table:
         
         #clean_prices_pys.write.mode("overwrite").option("overwriteSchema", "true").saveAsTable("lp_interim_clean_prices")
-        clean_prices_pys.createOrReplaceTempView("lp_interim_clean_prices")
+        clean_prices_pys.createOrReplaceGlobalTempView("lp_interim_clean_prices")
 
     return clean_prices_pd
 

@@ -1,7 +1,7 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC
-# MAGIC # Model Training Pipeline
+# MAGIC # Inference Pipeline
 
 # COMMAND ----------
 
@@ -10,12 +10,15 @@ import os
 
 sys.path.append(os.path.abspath(".."))
 
-from src.models.train import all_models_train
+from src.models.predict import all_models_predict
 from src import config
+import pandas as pd
 
 # COMMAND ----------
 
 src = "_dummy" # can be "" or "_dummy"
-tuning = False
-cross = False
-all_models_train(scope=src, cross=cross, tuning=tuning)
+inference_df = all_models_predict(scope=src)
+
+# COMMAND ----------
+
+

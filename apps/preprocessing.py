@@ -5,6 +5,11 @@
 
 # COMMAND ----------
 
+import sys
+import os
+
+sys.path.append(os.path.abspath(".."))
+
 from src.data.download_dataset import data_extraction_orchestration
 from src.preprocessing.preprocess import preprocessing_orchestration
 from src.features.make_features import feature_engineering_orchestration
@@ -13,8 +18,4 @@ from src.features.make_features import feature_engineering_orchestration
 
 raw_prices_pd = data_extraction_orchestration()
 clean_prices_pd = preprocessing_orchestration()
-model_df = feature_engineering_orchestration(one_hot=False)
-
-# COMMAND ----------
-
-
+model_df = feature_engineering_orchestration(one_hot=True)
